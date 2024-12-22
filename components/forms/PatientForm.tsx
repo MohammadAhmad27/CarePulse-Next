@@ -62,15 +62,17 @@ export default function PatientForm() {
           <h1 className="text-3xl md:text-4xl font-bold">Hi there 👋</h1>
           <p className="text-dark-700">Schedule your first appointment.</p>
         </section>
+        {/* 1st */}
         <CustomFormField
           control={form.control}
           fieldType={FormFieldType.INPUT}
           name="name"
-          label="Full name"
+          label="Full Name"
           placeholder="John Doe"
           iconSrc="/assets/icons/user.svg"
           iconAlt="user"
         />
+        {/* 2nd */}
         <CustomFormField
           control={form.control}
           fieldType={FormFieldType.INPUT}
@@ -80,6 +82,7 @@ export default function PatientForm() {
           iconSrc="/assets/icons/email.svg"
           iconAlt="email"
         />
+        {/* 3rd */}
         <CustomFormField
           control={form.control}
           fieldType={FormFieldType.PHONE_INPUT}
