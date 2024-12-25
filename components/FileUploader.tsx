@@ -9,7 +9,7 @@ interface FileUploaderProps {
   onChange: (files: File[]) => void;
 }
 
-const FileUploader = ({ files, onChange }: FileUploaderProps) => {
+export default function FileUploader ({ files, onChange }: FileUploaderProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // Do something with the files
     onChange(acceptedFiles);
@@ -52,5 +52,3 @@ const FileUploader = ({ files, onChange }: FileUploaderProps) => {
     </div>
   );
 };
-
-export default FileUploader;
