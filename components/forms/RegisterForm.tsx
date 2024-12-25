@@ -6,24 +6,32 @@ import { z } from "zod";
 import { Form, FormControl } from "@/components/ui/form";
 import CustomFormField from "../CustomFormField";
 import SubmitButton from "../SubmitButton";
-import { UserFormValidation } from "@/lib/validation";
+import { PatientFormValidation } from "@/lib/validation";
 import { useRouter } from "next/navigation";
-import { createUser } from "@/lib/actions/patient.actions";
 import { FormFieldType } from "./PatientForm";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Doctors, GenderOptions, IdentificationTypes } from "@/constants";
+import {
+  Doctors,
+  GenderOptions,
+  IdentificationTypes,
+  PatientFormDefaultValues,
+} from "@/constants";
 import { Label } from "../ui/label";
 import { SelectItem } from "../ui/select";
 import Image from "next/image";
+import FileUploader from "../FileUploader";
+import { ErrorBoundary } from "next/dist/client/components/error-boundary";
+import { registerPatient } from "@/lib/actions/patient.actions";
 
 export default function RegisterForm({ user }: { user: User }) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // 1. Define your form.
-  const form = useForm<z.infer<typeof UserFormValidation>>({
-    resolver: zodResolver(UserFormValidation),
+  const form = useForm<z.infer<typeof PatientFormValidation>>({
+    resolver: zodResolver(PatientFormValidation),
     defaultValues: {
+      ...PatientFormDefaultValues,
       name: "",
       email: "",
       phone: "",
@@ -31,17 +39,31 @@ export default function RegisterForm({ user }: { user: User }) {
   });
 
   // 2. Define a submit handler.
-  async function onSubmit({
-    name,
-    email,
-    phone,
-  }: z.infer<typeof UserFormValidation>) {
+  async function onSubmit(values: z.infer<typeof PatientFormValidation>) {
     setIsLoading(true);
+    let formData;
+    if (
+      values.identificationDocument &&
+      values.identificationDocument.length > 0
+    ) {
+      const blobFile = new Blob([values.identificationDocument[0]], {
+        type: values.identificationDocument[0].type,
+      });
+      formData = new FormData();
+      formData.append("blobFile", blobFile);
+      formData.append("fileName", values.identificationDocument[0].name);
+    }
     try {
-      const userData = { name, email, phone };
-      const user = await createUser(userData);
-      if (user) {
-        router.push(`/patients/${user.id}/register`);
+      const patientData = {
+        ...values,
+        user: user.$id,
+        birthDate: new Date(values.birthDate),
+        identificationDocument: formData,
+      };
+      // @ts-ignore
+      const patient = await registerPatient(patientData);
+      if (patient) {
+        router.push(`/patients/${user.$id}/new-appointment`);
       }
     } catch (error) {
       console.log(error);
@@ -97,6 +119,7 @@ export default function RegisterForm({ user }: { user: User }) {
           />
         </div>
         {/* 3rd */}
+
         <div className="flex flex-col gap-6 xl:flex-row">
           <CustomFormField
             control={form.control}
@@ -134,6 +157,7 @@ export default function RegisterForm({ user }: { user: User }) {
             )}
           />
         </div>
+
         {/* 4th */}
         <div className="flex flex-col gap-6 xl:flex-row">
           <CustomFormField
@@ -169,36 +193,43 @@ export default function RegisterForm({ user }: { user: User }) {
           />
         </div>
         {/* Medical Info Section */}
-        <section className="space-y-6">
-          <div className="mb-9 space-y-1">
-            <h2 className="text-lg md:text-2xl font-bold">
-              Medical Information
-            </h2>
-          </div>
-        </section>
-        {/* Custom Field */}
-        <CustomFormField
-          control={form.control}
-          fieldType={FormFieldType.SELECT}
-          name="primaryPhysician"
-          label="Primary Physician"
-          placeholder="Select a physician"
-        >
-          {Doctors.map((doctor) => (
-            <SelectItem key={doctor.name} value={doctor.name}>
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Image
-                  src={doctor.name}
-                  width={32}
-                  height={32}
-                  alt={doctor.name}
-                  className="rounded-full border border-dark-500"
-                />
-                <p>{doctor.name}</p>
+        <ErrorBoundary errorComponent={() => <div>ERROR 5</div>}>
+          <>
+            <section className="space-y-6">
+              <div className="mb-9 space-y-1">
+                <h2 className="text-lg md:text-2xl font-bold">
+                  Medical Information
+                </h2>
               </div>
-            </SelectItem>
-          ))}
-        </CustomFormField>
+            </section>
+            {/* Custom Field */}
+            {Doctors && (
+              <CustomFormField
+                control={form.control}
+                fieldType={FormFieldType.SELECT}
+                name="primaryPhysician"
+                label="Primary Physician"
+                placeholder="Select a physician"
+              >
+                {Doctors?.map((doctor) => (
+                  <SelectItem key={doctor.name} value={doctor.name}>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <Image
+                        src={doctor.image}
+                        width={32}
+                        height={32}
+                        alt={doctor.name}
+                        className="rounded-full border border-dark-500"
+                      />
+                      <p>{doctor.name}</p>
+                    </div>
+                  </SelectItem>
+                ))}
+              </CustomFormField>
+            )}
+          </>
+        </ErrorBoundary>
+
         {/* 6th */}
         <div className="flex flex-col gap-6 xl:flex-row">
           <CustomFormField
@@ -229,7 +260,7 @@ export default function RegisterForm({ user }: { user: User }) {
             control={form.control}
             fieldType={FormFieldType.TEXTAREA}
             name="currentMedication"
-            label="Current medication"
+            label="Current medication (if any)"
             placeholder="1bruprofen 200mg, Paracetamol 500mg"
           />
         </div>
@@ -253,7 +284,9 @@ export default function RegisterForm({ user }: { user: User }) {
 
         <section className="space-y-6">
           <div className="mb-9 space-y-1">
-            <h2 className="text-lg md:text-2xl font-bold">Identification and Verfication</h2>
+            <h2 className="text-lg md:text-2xl font-bold">
+              Identification and Verfication
+            </h2>
           </div>
 
           <CustomFormField
@@ -293,7 +326,9 @@ export default function RegisterForm({ user }: { user: User }) {
 
         <section className="space-y-6">
           <div className="mb-9 space-y-1">
-            <h2 className="text-lg md:text-2xl font-bold">Consent and Privacy</h2>
+            <h2 className="text-lg md:text-2xl font-bold">
+              Consent and Privacy
+            </h2>
           </div>
 
           <CustomFormField
