@@ -8,8 +8,8 @@ const Register = async ({ params: { userId } }: SearchParamProps) => {
   const user = await getUser(userId);
   return (
     <div className="flex h-screen max-h-screen">
-      <section className="remove-scrollbar container my-auto">
-        <div className="max-w-[496px] mx-auto size-full flex flex-col py-10">
+      <section className="remove-scrollbar container">
+        <div className="max-w-[1000px] mx-auto size-full flex flex-1 flex-col py-10">
           <Image
             src="/assets/icons/logo-full.svg"
             alt="patient"
@@ -18,14 +18,9 @@ const Register = async ({ params: { userId } }: SearchParamProps) => {
             className="mb-12 h-10 w-fit"
           />
           <RegisterForm user={user} />
-          <div className="mt-20 text-sm font-normal flex justify-between">
-            <p className="justify-items-end text-dark-600 xl:text-left">
+          <p className="text-sm justify-items-end text-dark-600 xl:text-left py-12">
               © 2024 CarePulse
             </p>
-            <Link href="/?admin=true" className="text-green-500">
-              Admin
-            </Link>
-          </div>
         </div>
       </section>
       <Image
