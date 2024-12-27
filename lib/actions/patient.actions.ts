@@ -81,3 +81,17 @@ export const registerPatient = async ({
     console.error("An error occurred while creating a new patient!", error);
   }
 };
+
+export const getPatient = async (userId: string) => {
+  // Implement the logic to get a user from your database
+  try {
+    const patient = await databases.listDocuments(
+      DATABASE_ID!,
+      PATIENT_COLLECTION_ID!,
+      [Query.equal('userId', userId)]
+    );
+    return parseStringify(patient.documents[0]);
+  } catch (error) {
+    console.log("An error occurred while fetching patient!", error);
+  }
+};
