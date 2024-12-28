@@ -5,17 +5,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
 import { Form } from "@/components/ui/form";
-import { createUser } from "@/lib/actions/patient.actions";
-import { UserFormValidation } from "@/lib/validation";
-
 import "react-phone-number-input/style.css";
 import CustomFormField, { FormFieldType } from "../CustomFormField";
 import SubmitButton from "../SubmitButton";
 import { Doctors } from "@/constants";
 import { SelectItem } from "../ui/select";
 import Image from "next/image";
+import { getAppointmentSchema } from "@/lib/validation";
+import { createAppointment } from "@/lib/actions/appointment.actions";
 
 export default function AppointmentForm({
   userId,
@@ -29,36 +27,79 @@ export default function AppointmentForm({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof UserFormValidation>>({
-    resolver: zodResolver(UserFormValidation),
+  const AppointmentFormValidation = getAppointmentSchema(type);
+
+  const form = useForm<z.infer<typeof AppointmentFormValidation>>({
+    resolver: zodResolver(AppointmentFormValidation),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
+      primaryPhysician: "",
+      schedule: new Date(),
+      reason: "",
+      note: "",
+      cancellationReason: "",
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof UserFormValidation>) => {
+  const onSubmit = async (
+    values: z.infer<typeof AppointmentFormValidation>
+  ) => {
     setIsLoading(true);
 
-    try {
-      const user = {
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-      };
-
-      const newUser = await createUser(user);
-
-      if (newUser) {
-        router.push(`/patients/${newUser.$id}/register`);
-      }
-    } catch (error) {
-      console.log(error);
+    let status;
+    switch (type) {
+      case "schedule":
+        status = "scheduled";
+        break;
+      case "cancel":
+        status = "cancelled";
+        break;
+      default:
+        status = "pending";
     }
 
-    setIsLoading(false);
+    try {
+      if (type === "create" && patientId) {
+        const appointment = {
+          userId,
+          patient: patientId,
+          primaryPhysician: values.primaryPhysician,
+          schedule: new Date(values.schedule),
+          reason: values.reason!,
+          status: status as Status,
+          note: values.note,
+        };
+
+        const newAppointment = await createAppointment(appointment);
+        console.log("New Appointment:", newAppointment);
+
+        if (newAppointment) {
+          form.reset();
+          router.push(
+            `/patients/${userId}/new-appointment/success?appointmentId=${newAppointment.$id}`
+          );
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      setIsLoading(false);
+      return;
+    }
   };
+  let buttonLabel;
+
+  switch (type) {
+    case "create":
+      buttonLabel = "Create Appointment";
+      break;
+    case "schedule":
+      buttonLabel = "Schedule Appointment";
+      break;
+    case "cancel":
+      buttonLabel = "Cancel Appointment";
+      break;
+    default:
+      break;
+  }
 
   return (
     <Form {...form}>
@@ -101,7 +142,7 @@ export default function AppointmentForm({
               name="schedule"
               label="Expected appointment date"
               showTimeSelect
-              dateFormat="MM/dd/yyyy"
+              dateFormat="MM/dd/yyyy  -  h:mm aa"
             />
             <div
               className={`flex flex-col gap-6  ${
@@ -139,7 +180,16 @@ export default function AppointmentForm({
           />
         )}
 
-        <SubmitButton isLoading={isLoading}>Get Started</SubmitButton>
+        <SubmitButton
+          isLoading={isLoading}
+          className={`${
+            type === "cancel"
+              ? "bg-red-700 text-white"
+              : "bg-green-500 text-white"
+          } w-full`}
+        >
+          {buttonLabel}
+        </SubmitButton>
       </form>
     </Form>
   );

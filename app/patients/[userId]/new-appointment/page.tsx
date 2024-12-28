@@ -1,13 +1,12 @@
 import AppointmentForm from "@/components/forms/AppointmentForm";
-import PatientForm from "@/components/forms/PatientForm";
 import { getPatient } from "@/lib/actions/patient.actions";
 import Image from "next/image";
-import Link from "next/link";
 import React from "react";
 
-export default async function NewAppointment({params : {userId}}: SearchParamProps) {
+export default async function NewAppointment({
+  params: { userId },
+}: SearchParamProps) {
   console.log("userId: ", userId);
-
   const patient = await getPatient(userId);
   return (
     <div className="flex h-screen max-h-screen">
@@ -20,12 +19,12 @@ export default async function NewAppointment({params : {userId}}: SearchParamPro
             height={1000}
             className="mb-12 h-10 w-fit"
           />
-          <AppointmentForm 
-          type="create"
-          userId={userId}
-          patientId={patient.$id}
+          <AppointmentForm
+            type="create"
+            userId={userId}
+            patientId={patient.$id}
           />
-          <p className="justify-items-end text-dark-600 xl:text-left py-10">
+          <p className="text-sm font-normal justify-items-end text-center text-dark-600 xl:text-left py-10">
             © 2024 CarePulse
           </p>
         </div>
