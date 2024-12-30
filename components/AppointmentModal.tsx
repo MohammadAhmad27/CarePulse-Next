@@ -12,7 +12,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Appointment } from "@/types/appwrite.types";
-import AppointmentForm from "./forms/AppointmentForm";
+
+import { AppointmentForm } from "./forms/AppointmentForm";
+
+import "react-datepicker/dist/react-datepicker.css";
 
 export const AppointmentModal = ({
   patientId,
@@ -24,8 +27,10 @@ export const AppointmentModal = ({
   userId: string;
   appointment?: Appointment;
   type: "schedule" | "cancel";
+  title: string;
+  description: string;
 }) => {
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
